@@ -60,11 +60,15 @@ export class ListTodosComponent implements OnInit {
         this.message = `Delete of ${id} Successful!`;
         this.refreshTodos();
       }
-    )
+    );
   }
 
   updateTodo(id) {
     console.log(`update todo: ${id}`);
     this.router.navigate(['todos', id]);
+  }
+
+  addTodo() {
+    this.router.navigate(['todos', -1]);
   }
 }
