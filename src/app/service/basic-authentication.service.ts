@@ -1,9 +1,14 @@
 import { Injectable } from '@angular/core';
 import { HttpHeaders, HttpClient } from '@angular/common/http';
+import { map } from 'rxjs/operators';
+import { API_URL } from '../app.constants';
 
 export class AuthenticationBean {
   constructor(public message: string) {}
 }
+
+export const TOKEN = 'token';
+export const AUTHENTICATED_USER = 'authenticatedUser';
 
 @Injectable({
   providedIn: 'root'
@@ -11,23 +16,24 @@ export class AuthenticationBean {
 export class BasicAuthenticationService {
   constructor(private http: HttpClient) {}
 
-  authenticate(username, password) {
-    // console.log('before ' + this.isUserLoggedIn());
-    if (username === 'in28minutes' && password === 'password') {
-      // console.log('after ' + this.isUserLoggedIn());
-      sessionStorage.setItem('authenticatedUser', username);
-      return true;
-    }
-    return false;
-  }
-
   isUserLoggedIn() {
-    const user = sessionStorage.getItem('authenticatedUser');
+    const user = sessionStorage.getItem(AUTHENTICATED_USER);
     return !(user === null);
   }
 
   logout() {
-    sessionStorage.removeItem('authenticatedUser');
+    sessionStorage.removeItem(AUTHENTICATED_USER);
+    sessionStorage.removeItem(TOKEN);
+  }
+
+  getAuthenticatedUser() {
+    return sessionStorage.getItem(AUTHENTICATED_USER);
+  }
+
+  getAuthenticatedToken() {
+    if (this.getAuthenticatedUser()) {
+      return sessionStorage.getItem(TOKEN);
+    }
   }
 
   executeAuthenticationService(username, password) {
@@ -38,9 +44,15 @@ export class BasicAuthenticationService {
       Authorization: basicAuthHeaderString
     });
 
-    return this.http.get<AuthenticationBean>(
-      `http://localhost:8080/basicauth`,
-      { headers }
-    );
+    return this.http
+      .get<AuthenticationBean>(`${API_URL}/basicauth`, { headers })
+      .pipe(
+        map(data => {
+          sessionStorage.setItem(AUTHENTICATED_USER, username);
+          sessionStorage.setItem(TOKEN, basicAuthHeaderString);
+          return data;
+        })
+      );
   }
+
 }
